@@ -1,5 +1,5 @@
-#include <gtest/gtest.h>
 #include <fastbook/order_book.h>
+#include <gtest/gtest.h>
 
 #include <vector>
 
@@ -31,7 +31,7 @@ TEST(OrderBookTest, ExecuteOrder) {
     ASSERT_TRUE(bid.has_value());
     EXPECT_EQ(bid->total_quantity, 5u);
 
-    EXPECT_FALSE(book.execute(1, 10));  // больше остатка
+    EXPECT_FALSE(book.execute(1, 10));               // больше остатка
     EXPECT_EQ(book.best_bid()->total_quantity, 5u);  // книга не изменилась
 }
 
@@ -272,8 +272,8 @@ TEST(OrderBookTest, ReplaceOrder) {
     OrderBook book;
     book.add(1, Side::BUY, 100, 10);
 
-    EXPECT_TRUE(book.replace(1, 2, 5, 101));   // (old, new, qty, price)
-    EXPECT_FALSE(book.replace(1, 3, 10, 102)); // старой заявки уже нет
+    EXPECT_TRUE(book.replace(1, 2, 5, 101));    // (old, new, qty, price)
+    EXPECT_FALSE(book.replace(1, 3, 10, 102));  // старой заявки уже нет
 }
 
 TEST(OrderBookTest, ReplaceWithLargerQuantityIsAllowed) {
