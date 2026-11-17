@@ -1,6 +1,48 @@
 #include <fastbook/order_book.h>
 
+#include <iterator>
+
 using namespace fastbook;
+
+namespace {
+template <typename LevelMap>
+bool check_side(const LevelMap& levels, Side side,
+                const std::unordered_map<OrderID, OrderLoc>& index,
+                size_t& order_count) {
+    for (const auto& [price, level] : levels) {
+        if (level.price != price) return false;
+        if (level.orderIds.empty()) return false;
+        if (level.total_quantity == 0) return false;
+
+        Quantity sum = 0;
+        for (auto it = level.orderIds.begin(); it != level.orderIds.end(); ++it) {
+            if (it->quantity == 0) return false;     // заявка с нулевым объёмом
+            sum += it->quantity;
+            auto found = index.find(it->orderId);
+            if (found == index.end()) return false;
+            const OrderLoc& loc = found->second;
+            if (loc.side != side) return false;
+            if (loc.price != price) return false;
+            if (loc.orderIt != it) return false;
+
+            ++order_count;
+        }
+        if (sum != level.total_quantity) return false;
+    }
+    return true;
+}
+}  // namespace
+
+uint32_t OrderBook::error_count(ErrorCode code) const {
+    return error_codes_[static_cast<size_t>(code)];
+}
+
+bool OrderBook::check_invariants() const {
+    size_t order_count = 0;
+    if (!check_side(bids_, Side::BUY, index_, order_count)) return false;
+    if (!check_side(asks_, Side::SELL, index_, order_count)) return false;
+    return order_count == index_.size();
+}
 
 bool OrderBook::add(OrderID orderId, Side side, Price price, Quantity quantity) {
     if (index_.contains(orderId)) {

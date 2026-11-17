@@ -48,12 +48,11 @@ public:
     std::optional<Level> best_ask() const;
     std::vector<Level> depth(Side side, uint32_t n) const;
 
-    uint32_t error_count(ErrorCode code) const {
-        return error_codes_[static_cast<size_t>(code)];
-    };
+    uint32_t error_count(ErrorCode code) const;
+    bool check_invariants() const;
 private:
     bool reduce_quantity(OrderID orderId, Quantity quantity);
-    
+
     std::map<Price, Level, std::greater<Price>> bids_;
     std::map<Price, Level> asks_;
     std::unordered_map<OrderID, OrderLoc> index_;
