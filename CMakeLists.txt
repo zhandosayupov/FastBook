@@ -18,9 +18,12 @@ option(FASTBOOK_BUILD_BENCH "Build benchmarks" ON)
 add_library(fastbook_warnings INTERFACE)
 target_compile_options(fastbook_warnings INTERFACE -Wall -Wextra -Wpedantic -Werror)
 
+add_library(fastbook_core src/order_book.cpp)
+target_include_directories(fastbook_core PUBLIC include)
+target_link_libraries(fastbook_core PRIVATE fastbook_warnings)
+
 add_executable(fastbook src/main.cpp)
-target_include_directories(fastbook PRIVATE include)
-target_link_libraries(fastbook PRIVATE fastbook_warnings)
+target_link_libraries(fastbook PRIVATE fastbook_core fastbook_warnings)
 
 if(FASTBOOK_BUILD_TESTS)
   enable_testing()

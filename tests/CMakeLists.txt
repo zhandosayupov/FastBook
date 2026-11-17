@@ -6,9 +6,12 @@ FetchContent_Declare(
 set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_executable(fastbook_tests smoke_test.cpp)
-target_include_directories(fastbook_tests PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(fastbook_tests PRIVATE fastbook_warnings GTest::gtest_main)
+add_executable(fastbook_tests
+  smoke_test.cpp
+  order_book_test.cpp
+  invariants_test.cpp
+)
+target_link_libraries(fastbook_tests PRIVATE fastbook_core fastbook_warnings GTest::gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(fastbook_tests)
