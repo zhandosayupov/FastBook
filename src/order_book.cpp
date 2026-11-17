@@ -36,18 +36,21 @@ bool OrderBook::reduce_quantity(OrderID orderId, Quantity quantity) {
     }
 
     orderLoc.orderIt->quantity -= quantity;
+    auto side = orderLoc.side;
+    auto price = orderLoc.price;
     level.total_quantity -= quantity;
+    auto total_quantity = level.total_quantity;
 
     if (orderLoc.orderIt->quantity == 0) {
         level.orderIds.erase(orderLoc.orderIt);
         index_.erase(it);
     }
 
-    if (level.total_quantity == 0) {
-        if (orderLoc.side == Side::BUY) {
-            bids_.erase(orderLoc.price);
+    if (!total_quantity) {
+        if (side == Side::BUY) {
+            bids_.erase(price);
         } else {
-            asks_.erase(orderLoc.price);
+            asks_.erase(price);
         }
     }
 
