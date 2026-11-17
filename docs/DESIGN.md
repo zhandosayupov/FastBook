@@ -43,7 +43,8 @@ searching the level queue with `remove_if` (O(n) per level).
 Chosen: `std::list<Order>` per price level (FIFO: new orders go to the tail).
 Why: removing an order from the middle by iterator is O(1), and iterators and references to other
 elements stay valid on insert and erase, so storing list iterators in the index is safe. A rehash of
-the index (`unordered_map`) invalidates only the map's own iterators, not the stored list iterators.
+the index (`unordered_map`) invalidates the map's own iterators, but not references or pointers to
+its elements and not the stored list iterators, so the index keeps working across rehashes.
 Rejected: `std::vector` and `std::deque`: removing from the middle shifts elements (O(n)) and
 invalidates iterators.
 Cost: one allocation per order (list node). `add` costs 2 allocations (list node and index node),
@@ -59,15 +60,21 @@ Why: no exceptions in the hot path; on a correct feed the counters must stay 0, 
 points to a parser or book bug.
 Rejected: throwing exceptions; storing a list of failed orders (allocations in the hot path).
 
-## D-008 replace argument order (deviates from PLAN.md)
+## D-008 replace argument order (deviates from the project plan)
 
-Chosen: `replace(oldId, newId, quantity, price)`. `PLAN.md` has `replace(old_id, new_id, price, qty)`.
+Chosen: `replace(oldId, newId, quantity, price)`. The project plan (`PLAN.md`, kept locally and
+listed in `.gitignore`, so it is not in the repository) has `replace(old_id, new_id, price, qty)`.
 Why kept: it is what was implemented and tested.
 Known cost: `add` takes `(id, side, price, quantity)`, so `replace` is inconsistent with it, and
 both fields are `uint32_t`, so swapping them compiles silently (see D-004). Revisit together with
 strong types: the natural order is `(oldId, newId, price, quantity)`.
 Semantics: the side is taken from the old order; the new order goes to the tail of its queue (loses
 priority); all checks happen before any change, so a failed `replace` changes nothing.
+This depends on `add` accepting everything the checks let through (new id free, quantity non-zero):
+`replace` calls `remove` and then `add`, so if `add` ever gets another reason to reject, that check
+must also be made in `replace` before `remove`. The tests
+`ReplaceWithExistingNewIdMustFailAndKeepOldOrder` and `ReplaceWithZeroQuantityKeepsOldOrder`
+lock in the current behavior.
 
 ## D-009 One book per instrument, index per book (not implemented yet)
 
