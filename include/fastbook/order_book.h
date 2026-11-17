@@ -1,14 +1,14 @@
 #pragma once
 
-#include <optional>
-#include <cstdint>
 #include <fastbook/types.h>
-#include <vector>
-#include <unordered_map>
-#include <map>
+#include <array>
+#include <cstdint>
 #include <functional>
 #include <list>
-#include <array>
+#include <map>
+#include <optional>
+#include <unordered_map>
+#include <vector>
 
 namespace fastbook {
 struct Order {
@@ -33,7 +33,7 @@ enum ErrorCode {
     ORDER_ID_NOT_FOUND,
     INSUFFICIENT_QUANTITY,
     INVALID_QUANTITY,
-    COUNT // always last
+    COUNT  // always last
 };
 
 class OrderBook {
@@ -50,6 +50,7 @@ public:
 
     uint32_t error_count(ErrorCode code) const;
     bool check_invariants() const;
+
 private:
     bool reduce_quantity(OrderID orderId, Quantity quantity);
 
@@ -58,4 +59,4 @@ private:
     std::unordered_map<OrderID, OrderLoc> index_;
     std::array<uint32_t, COUNT> error_codes_{};
 };
-} // namespace fastbook
+}  // namespace fastbook

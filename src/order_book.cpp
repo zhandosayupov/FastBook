@@ -7,8 +7,7 @@ using namespace fastbook;
 namespace {
 template <typename LevelMap>
 bool check_side(const LevelMap& levels, Side side,
-                const std::unordered_map<OrderID, OrderLoc>& index,
-                size_t& order_count) {
+                const std::unordered_map<OrderID, OrderLoc>& index, size_t& order_count) {
     for (const auto& [price, level] : levels) {
         if (level.price != price) return false;
         if (level.orderIds.empty()) return false;
@@ -16,7 +15,7 @@ bool check_side(const LevelMap& levels, Side side,
 
         Quantity sum = 0;
         for (auto it = level.orderIds.begin(); it != level.orderIds.end(); ++it) {
-            if (it->quantity == 0) return false;     // заявка с нулевым объёмом
+            if (it->quantity == 0) return false;  // заявка с нулевым объёмом
             sum += it->quantity;
             auto found = index.find(it->orderId);
             if (found == index.end()) return false;
@@ -53,7 +52,7 @@ bool OrderBook::add(OrderID orderId, Side side, Price price, Quantity quantity) 
         error_codes_[ErrorCode::INVALID_QUANTITY]++;
         return false;
     }
-    
+
     Level& level = (side == Side::BUY) ? bids_[price] : asks_[price];
     level.price = price;
     level.total_quantity += quantity;
@@ -131,7 +130,7 @@ bool OrderBook::replace(OrderID oldOrderId, OrderID newOrderId, Quantity quantit
         return false;
     }
 
-    Side side = idx->second.side;   
+    Side side = idx->second.side;
     remove(oldOrderId);
     return add(newOrderId, side, price, quantity);
 }

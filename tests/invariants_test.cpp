@@ -12,7 +12,6 @@
 using namespace fastbook;
 using fastbook::test::ReferenceBook;
 
-
 namespace {
 
 constexpr Price kMinPrice = 95;
