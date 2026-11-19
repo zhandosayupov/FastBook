@@ -10,8 +10,10 @@ add_executable(fastbook_tests
   smoke_test.cpp
   order_book_test.cpp
   invariants_test.cpp
+  utils/byte_order_test.cpp
+  itch/messages_test.cpp
 )
-target_link_libraries(fastbook_tests PRIVATE fastbook_core fastbook_warnings GTest::gtest_main)
+target_link_libraries(fastbook_tests PRIVATE fastbook_core fastbook_utils fastbook_itch fastbook_warnings GTest::gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(fastbook_tests)
