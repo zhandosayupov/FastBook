@@ -18,12 +18,21 @@ option(FASTBOOK_BUILD_BENCH "Build benchmarks" ON)
 add_library(fastbook_warnings INTERFACE)
 target_compile_options(fastbook_warnings INTERFACE -Wall -Wextra -Wpedantic -Werror)
 
+# Header-only libraries: no .cpp files, so INTERFACE targets.
+add_library(fastbook_utils INTERFACE)
+target_include_directories(fastbook_utils INTERFACE include)
+
+# ITCH 5.0 messages (and later the decoder and parser); uses fastbook_utils.
+add_library(fastbook_itch INTERFACE)
+target_link_libraries(fastbook_itch INTERFACE fastbook_utils)
+
 add_library(fastbook_core src/order_book.cpp)
 target_include_directories(fastbook_core PUBLIC include)
 target_link_libraries(fastbook_core PRIVATE fastbook_warnings)
 
+# The executable must exist before target_link_libraries refers to it.
 add_executable(fastbook src/main.cpp)
-target_link_libraries(fastbook PRIVATE fastbook_core fastbook_warnings)
+target_link_libraries(fastbook PRIVATE fastbook_core fastbook_utils fastbook_warnings)
 
 if(FASTBOOK_BUILD_TESTS)
   enable_testing()
