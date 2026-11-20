@@ -5,9 +5,20 @@
 #include <cstdint>
 #include <cstring>
 
-
 namespace fastbook::itch {
 namespace utils = fastbook::utils;
+
+/*
+About guarantees: Caller must guarantee at least T::length readable bytes at ptr,
+and that ptr[0] is the message type. No bounds checking is done here
+*/
+
+/*
+Decoders for the ITCH 5.0 messages that change the order book: A, F, E, C, X, D, U
+(plus decode_header). The other 16 message types in messages.h are intentionally not
+decoded yet: they do not affect the book and the parser will skip them by length.
+They can be added later, one function and one test each.
+*/
 
 inline void decode_header(const std::uint8_t* ptr, Header& header) {
     header.stock_locate = utils::read_uint16_be(ptr + 1);
