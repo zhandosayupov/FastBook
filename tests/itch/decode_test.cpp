@@ -43,14 +43,15 @@ void expect_header(const itch::Header& h) {
 
 }  // namespace
 
-// decode_* take a pointer to the message WITHOUT the type byte, so every test builds the
-// message as in the specification table and passes `m + 1`.
+// decode_* take a pointer to the START of the message (the type byte), so the offsets in
+// decode.h are the same as in the specification table and in messages.h. Every test builds
+// the message with those offsets and passes `m`.
 
 TEST(ItchDecodeTest, Header) {
     std::uint8_t m[itch::AddOrder::length] = {};
     put_header(m, 'A');
     itch::Header h{};
-    itch::decode_header(m + 1, h);
+    itch::decode_header(m, h);
     expect_header(h);
 }
 
@@ -63,7 +64,7 @@ TEST(ItchDecodeTest, AddOrder) {
     put_text(m, 24, "AAPL    ");           // stock
     put(m, 32, 0x31323334, 4);             // price
 
-    const itch::AddOrder msg = itch::decode_add_order(m + 1);
+    const itch::AddOrder msg = itch::decode_add_order(m);
     expect_header(msg.header);
     EXPECT_EQ(msg.order_reference_number, 0x1112131415161718ull);
     EXPECT_EQ(msg.side, 'B');
@@ -82,7 +83,7 @@ TEST(ItchDecodeTest, AddOrderWithMPID) {
     put(m, 32, 0x31323334, 4);
     put_text(m, 36, "NSDQ");  // attribution
 
-    const itch::AddOrderWithMPID msg = itch::decode_add_order_with_mpid(m + 1);
+    const itch::AddOrderWithMPID msg = itch::decode_add_order_with_mpid(m);
     expect_header(msg.header);
     EXPECT_EQ(msg.order_reference_number, 0x1112131415161718ull);
     EXPECT_EQ(msg.side, 'S');
@@ -99,7 +100,7 @@ TEST(ItchDecodeTest, ExecuteOrder) {
     put(m, 19, 0x21222324, 4);             // executed shares
     put(m, 23, 0x4142434445464748ull, 8);  // match number
 
-    const itch::ExecuteOrder msg = itch::decode_execute_order(m + 1);
+    const itch::ExecuteOrder msg = itch::decode_execute_order(m);
     expect_header(msg.header);
     EXPECT_EQ(msg.order_reference_number, 0x1112131415161718ull);
     EXPECT_EQ(msg.shares, 0x21222324u);
@@ -115,7 +116,7 @@ TEST(ItchDecodeTest, ExecuteOrderWithPrice) {
     m[31] = 'Y';                // printable
     put(m, 32, 0x31323334, 4);  // execution price
 
-    const itch::ExecuteOrderWithPrice msg = itch::decode_execute_order_with_price(m + 1);
+    const itch::ExecuteOrderWithPrice msg = itch::decode_execute_order_with_price(m);
     expect_header(msg.header);
     EXPECT_EQ(msg.order_reference_number, 0x1112131415161718ull);
     EXPECT_EQ(msg.shares, 0x21222324u);
@@ -130,7 +131,7 @@ TEST(ItchDecodeTest, CancelOrder) {
     put(m, 11, 0x1112131415161718ull, 8);
     put(m, 19, 0x21222324, 4);  // cancelled shares
 
-    const itch::CancelOrder msg = itch::decode_cancel_order(m + 1);
+    const itch::CancelOrder msg = itch::decode_cancel_order(m);
     expect_header(msg.header);
     EXPECT_EQ(msg.order_reference_number, 0x1112131415161718ull);
     EXPECT_EQ(msg.shares, 0x21222324u);
@@ -141,7 +142,7 @@ TEST(ItchDecodeTest, DeleteOrder) {
     put_header(m, 'D');
     put(m, 11, 0x1112131415161718ull, 8);
 
-    const itch::DeleteOrder msg = itch::decode_delete_order(m + 1);
+    const itch::DeleteOrder msg = itch::decode_delete_order(m);
     expect_header(msg.header);
     EXPECT_EQ(msg.order_reference_number, 0x1112131415161718ull);
 }
@@ -154,7 +155,7 @@ TEST(ItchDecodeTest, ReplaceOrder) {
     put(m, 27, 0x21222324, 4);             // shares
     put(m, 31, 0x31323334, 4);             // price
 
-    const itch::ReplaceOrder msg = itch::decode_replace_order(m + 1);
+    const itch::ReplaceOrder msg = itch::decode_replace_order(m);
     expect_header(msg.header);
     EXPECT_EQ(msg.original_order_reference_number, 0x1112131415161718ull);
     EXPECT_EQ(msg.new_order_reference_number, 0x5152535455565758ull);
