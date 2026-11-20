@@ -12,6 +12,7 @@ add_executable(fastbook_tests
   invariants_test.cpp
   utils/byte_order_test.cpp
   itch/messages_test.cpp
+  itch/decode_test.cpp
 )
 target_link_libraries(fastbook_tests PRIVATE fastbook_core fastbook_utils fastbook_itch fastbook_warnings GTest::gtest_main)
 
