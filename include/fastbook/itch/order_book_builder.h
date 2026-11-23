@@ -19,7 +19,7 @@ inline static std::optional<Side> to_side(char c) {
 
 class OrderBookBuilder {
 public:
-=    void on_add_order(const AddOrder& order) {
+    void on_add_order(const AddOrder& order) {
         auto side = to_side(order.side);
         if (side.has_value()) {
             order_book_.add(order.order_reference_number, side.value(), order.price, order.shares);
@@ -53,6 +53,8 @@ public:
         order_book_.replace(order.original_order_reference_number, order.new_order_reference_number,
                             order.shares, order.price);
     }
+
+    const OrderBook& book() const { return order_book_; }
 
 private:
     OrderBook order_book_;
