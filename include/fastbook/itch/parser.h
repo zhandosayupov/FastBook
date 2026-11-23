@@ -1,7 +1,10 @@
 #pragma once
 
+#include <fastbook/itch/decode.h>
+#include <fastbook/itch/messages.h>
 #include <fastbook/utils/byte_order.h>
-
+#include <cstddef>
+#include <cstdint>
 
 namespace fastbook::itch {
 struct ParseStats {
@@ -12,56 +15,80 @@ struct ParseStats {
 };
 
 template <typename Handler>
-ParseStats parse(const std::uint8_t* data, std::size_t size, Handler& handler) { // TODO: how to define scheme of Handler? maybe virtual class interface? or some asserts? What are trade-offs? 
+ParseStats parse(const std::uint8_t* data, std::size_t size,
+                 Handler& handler) {  // TODO: how to define scheme of Handler? maybe virtual class
+                                      // interface? or some asserts? What are trade-offs?
     ParseStats stats;
     std::size_t pos = 0;
     while (size - pos >= 2) {
-        std::size_t msg_size = utils::read_uint16_be(data + pos);
-        pos += 2;
+        std::size_t len = fastbook::utils::read_uint16_be(data + pos);
         char msg_type = *(data + pos);
-        // TODO how to differ bad sizes? 
-        switch(msg_type) {
-            case 'A':
-                if (size - pos >= msg_size) {
-                    handler.on_add_order(decode_add_order(data + pos));
+        pos += 2;
+        switch (msg_type) {
+            case AddOrder::type:
+                if (len == AddOrder::length) {
+                    handler.on_add_order(decode_add_order(msg));
+                    ++stats.messages;
+                } else {
+                    ++stats.bad_length;
                 }
                 break;
-            case 'F':
-                if (size - pos >= msg_size) {
+            case AddOrderWithMPID::type:
+                if (len == AddOrderWithMPID::length) {
                     handler.on_add_order_with_mpid(decode_add_order_with_mpid(data + pos));
+                    ++stats.messages;
+                } else {
+                    ++stats.bad_length;
                 }
                 break;
-            case 'E':
-                if (size - pos >= msg_size) {
+            case ExecuteOrder::type:
+                if (len == ExecuteOrder::length) {
                     handler.on_execute_order(decode_execute_order(data + pos));
+                    ++stats.messages;
+                } else {
+                    ++stats.bad_length;
                 }
                 break;
-            case 'C':
-                if (size - pos >= msg_size) {
-                    handler.on_execute_order_with_price(decode_execute_order_with_price(data + pos));
+            case ExecuteOrderWithPrice::type:
+                if (len == ExecuteOrderWithPrice::length) {
+                    handler.on_execute_order_with_price(
+                        decode_execute_order_with_price(data + pos));
+                    ++stats.messages;
+                } else {
+                    ++stats.bad_length;
                 }
                 break;
-            case 'X':
-                if (size - pos >= msg_size) {
+            case CancelOrder::type:
+                if (len == CancelOrder::length) {
                     handler.on_cancel_order(decode_cancel_order(data + pos));
+                    ++stats.messages;
+                } else {
+                    ++stats.bad_length;
                 }
                 break;
-            case 'D':
-                if (size - pos >= msg_size) {
+            case DeleteOrder::type:
+                if (len == DeleteOrder::length) {
                     handler.on_delete_order(decode_delete_order(data + pos));
+                    ++stats.messages;
+                } else {
+                    ++stats.bad_length;
                 }
                 break;
-            case 'U':
-                if (size - pos >= msg_size) {
+            case ReplaceOrder::type:
+                if (len == ReplaceOrder::length) {
                     handler.on_replace_order(decode_replace_order(data + pos));
+                    ++stats.messages;
+                } else {
+                    ++stats.bad_length;
                 }
                 break;
             default:
-                stats.messages++;
+                ++stats.skipped;
+            pos += len;
         }
-        pos += msg_size;
-        stats.consumed += msg_size;
+        stats.consumed = pos;
+        return stats;
     }
 }
 
-} // namespace fastbook::itch
+}  // namespace fastbook::itch
