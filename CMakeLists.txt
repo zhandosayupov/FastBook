@@ -18,12 +18,14 @@ option(FASTBOOK_BUILD_BENCH "Build benchmarks" ON)
 add_library(fastbook_warnings INTERFACE)
 target_compile_options(fastbook_warnings INTERFACE -Wall -Wextra -Wpedantic -Werror)
 
-# Header-only libraries: no .cpp files, so INTERFACE targets.
 add_library(fastbook_utils INTERFACE)
 target_include_directories(fastbook_utils INTERFACE include)
 
-# ITCH 5.0 messages (and later the decoder and parser); uses fastbook_utils.
 add_library(fastbook_itch INTERFACE)
+target_sources(fastbook_itch PRIVATE
+  include/fastbook/itch/decode.h
+  include/fastbook/itch/parser.h
+)
 target_link_libraries(fastbook_itch INTERFACE fastbook_utils)
 
 add_library(fastbook_core src/order_book.cpp)
