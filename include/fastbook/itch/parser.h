@@ -32,7 +32,7 @@ ParseStats parse(const std::uint8_t* data, std::size_t size, Handler& handler) {
     ParseStats stats;
     std::size_t pos = 0;
     while (size - pos >= 2) {
-        std::size_t len = fastbook::utils::read_uint16_be(msg);
+        std::size_t len = fastbook::utils::read_uint16_be(data + pos);
         if (size - pos - 2 < len) {
             break;
         }
@@ -99,10 +99,12 @@ ParseStats parse(const std::uint8_t* data, std::size_t size, Handler& handler) {
                 }
                 break;
             default:
-                ++stats.skipped;
+                if (len) {
+                    ++stats.skipped;
+                }
                 break;
         }
-        pos += len;
+        pos += len + 2;
         stats.consumed = pos;
     }
     return stats;
