@@ -24,10 +24,6 @@ target_include_directories(fastbook_utils INTERFACE include)
 
 # ITCH 5.0 messages, decoder and parser; uses fastbook_utils.
 add_library(fastbook_itch INTERFACE)
-target_sources(fastbook_itch PRIVATE
-  include/fastbook/itch/decode.h
-  include/fastbook/itch/parser.h
-)
 target_link_libraries(fastbook_itch INTERFACE fastbook_utils)
 
 add_library(fastbook_core src/order_book.cpp)

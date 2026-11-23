@@ -33,13 +33,16 @@ ParseStats parse(const std::uint8_t* data, std::size_t size, Handler& handler) {
     std::size_t pos = 0;
     while (size - pos >= 2) {
         std::size_t len = fastbook::utils::read_uint16_be(data + pos);
+        if (len == 0) {
+            ++stats.bad_length;
+            pos += 2;
+            stats.consumed = pos;
+            continue;
+        }
         if (size - pos - 2 < len) {
             break;
         }
         const std::uint8_t* msg = data + pos + 2;
-        if (len == 0) {
-            ++stats.bad_length;
-        }
         char msg_type = *(msg);
         switch (msg_type) {
             case AddOrder::type:
@@ -99,9 +102,7 @@ ParseStats parse(const std::uint8_t* data, std::size_t size, Handler& handler) {
                 }
                 break;
             default:
-                if (len) {
-                    ++stats.skipped;
-                }
+                ++stats.skipped;
                 break;
         }
         pos += len + 2;
