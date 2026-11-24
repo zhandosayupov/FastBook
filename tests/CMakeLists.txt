@@ -10,6 +10,7 @@ add_executable(fastbook_tests
   smoke_test.cpp
   order_book_test.cpp
   invariants_test.cpp
+  error_count_test.cpp
   utils/byte_order_test.cpp
   itch/messages_test.cpp
   itch/decode_test.cpp
