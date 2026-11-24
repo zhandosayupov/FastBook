@@ -76,7 +76,7 @@ must also be made in `replace` before `remove`. The tests
 `ReplaceWithExistingNewIdMustFailAndKeepOldOrder` and `ReplaceWithZeroQuantityKeepsOldOrder`
 lock in the current behavior.
 
-## D-009 One book per instrument, index per book (not implemented yet)
+## D-009 One book per instrument, index per book (implemented in F2, see D-018)
 
 Decision for F2/F3: `std::vector<OrderBook>` indexed by the ITCH Stock Locate (`uint16_t`), each
 book with its own order index.
@@ -115,3 +115,60 @@ Chosen: `.clang-format` based on Google style with 4-space indent, column limit 
 modifiers flush with the class, include blocks preserved. CI has a `format` job running
 `clang-format --dry-run --Werror` on all C++ files.
 Why: 4-space indent is the author's preference; the check keeps formatting diffs out of reviews.
+
+## D-013 Big-endian fields are read with shifts, never by casting the buffer
+
+Chosen: `utils::read_uint16_be` ... `read_uint64_be` (and `read_uint48_be` for the 6-byte
+timestamp) build the value byte by byte with shifts and ORs.
+Why: ITCH is big-endian, x86 is little-endian. Composing with shifts is portable and has no
+undefined behavior; at `-O2` GCC turns it into a single load plus `bswap` (checked in the
+generated assembly), so it costs nothing.
+
+## D-014 Message structs for all 23 types, decoders only for the 7 that change the book
+
+Chosen: `itch/messages.h` has a struct for every ITCH 5.0 message, each with
+`static constexpr char type` and `static constexpr std::size_t length` (without the 2-byte length
+prefix). `itch/decode.h` has decoders only for A, F, E, C, X, D, U plus `decode_header`.
+Why: the structs document the whole protocol and are cheap to keep; decoders are code that must be
+tested, so they are written only where the book needs them. More decoders can be added later
+without changing the parser's design..
+
+## D-015 decode_* take a pointer to the message start and do no bounds checks
+
+Chosen: every `decode_*` takes a pointer to the type byte (offset 0) and reads fields at the offsets
+from the specification. It does not check the buffer size.
+Why: offsets in the code match the specification table one to one, which makes review easy. The
+parser checks the length once per message (`len == T::length`) before calling a decoder, instead of
+a check per field.
+Rejected: pointer after the type byte (every offset would be spec - 1, an easy source of
+off-by-one bugs).
+Contract: the caller must guarantee `T::length` readable bytes. This is documented in `decode.h`.
+
+## D-016 Parser: handler as a template parameter constrained by a concept
+
+Chosen: `template <ItchHandler Handler> ParseStats parse(const uint8_t* data, size_t size,
+Handler& handler)`. `ItchHandler` is a C++20 concept that requires the 7 methods
+`on_add_order`, `on_add_order_with_mpid`, `on_execute_order`, `on_execute_order_with_price`,
+`on_cancel_order`, `on_delete_order`, `on_replace_order`, each taking `const T&`.
+
+## D-017 Parser framing and error handling
+
+Chosen: each message is a 2-byte big-endian length followed by the message. The parser loops while
+at least 2 bytes are left:
+- body incomplete (fewer than `len` bytes left): stop before this frame;
+- `len == 0`: no type byte, count `bad_length`, skip the 2 bytes;
+- known type with `len != T::length`: count `bad_length`, skip the frame, do not decode;
+- known type with the right length: decode, call the handler, count `messages`;
+- any other type: count `skipped`, skip the frame by its length.
+
+## D-018 Adapter: one order book per stock locate, side validated in the adapter
+
+Chosen: `itch::OrderBookBuilder` (`itch/order_book_builder.h`) is the parser handler that updates
+the books. It holds `std::vector<OrderBook>` with 65536 entries, one per possible
+`header.stock_locate` (`uint16_t`), and routes every message by its locate:
+A, F -> `add(ref, side, price, shares)`; E, C -> `execute(ref, shares)`; X -> `cancel(ref, shares)`;
+D -> `remove(ref)`; U -> `replace(old_ref, new_ref, shares, price)` (argument order from D-008; U
+has no side, the book keeps the side of the old order). This implements D-009.
+Why 65536: every value of a `uint16_t` locate is a valid index, so there is no bounds check per
+message. Empty books allocate nothing for orders; the vector is one allocation of about 10 MB of
+empty containers at start-up.
