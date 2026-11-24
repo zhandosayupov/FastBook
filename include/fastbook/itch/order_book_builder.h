@@ -28,6 +28,8 @@ public:
         if (side.has_value()) {
             order_books_[order.header.stock_locate].add(order.order_reference_number, side.value(),
                                                         order.price, order.shares);
+        } else {
+            bad_side_++;
         }
     }
 
@@ -36,6 +38,8 @@ public:
         if (side.has_value()) {
             order_books_[order.header.stock_locate].add(order.order_reference_number, side.value(),
                                                         order.price, order.shares);
+        } else {
+            bad_side_++;
         }
     }
 
@@ -63,9 +67,8 @@ public:
 
     const OrderBook& book(std::uint16_t stock_locate) const { return order_books_[stock_locate]; }
 
-    const std::size_t bas_side() const {
-        return bad_side_;
-    }
+    std::size_t bad_side() const { return bad_side_; }
+
 private:
     static constexpr std::size_t kLocates = std::numeric_limits<std::uint16_t>::max() + 1;
     std::vector<OrderBook> order_books_ = std::vector<OrderBook>(kLocates);
